@@ -1,10 +1,8 @@
 require "../spec_helper"
 require "../../src/ammonite/byte_buffer.cr"
 
-describe Ammonite do
-  # TODO: Write tests
-
-  it "works" do
+describe Ammonite::ByteBuffer do
+  it "is a slice of UInt8" do
     buffer = Ammonite::ByteBuffer.new(12, 0_u8)
     buffer[0].should eq 0
     buffer[11].should eq 0
