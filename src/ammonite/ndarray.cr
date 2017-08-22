@@ -126,10 +126,11 @@ module Ammonite
     def reshape(new_shape : Array(Int32))
       raise "Incompatible shape #{new_shape} with Ndarray of shape #{shape}" unless new_shape.reduce(1) {|res,n| res*n} == size
 
-      # TODO: Here we have continguous memory, so just return a new view
       if strides == self.class.strides_from_shape(shape)
+        # Here we have continguous memory, so just return a new view
         Ndarray(T).new(self, offset, new_shape, self.class.strides_from_shape(new_shape))
       else
+        # Here the data is not stored in a block, so we have to make a copy
         Ndarray(T).empty(new_shape).tap do |array|
           i = 0
           each do |value|
