@@ -105,5 +105,64 @@ describe Ammonite::Ndarray do
         end
       end
     end
+
+    describe "{nil, step, nil}" do
+      it "goes across whole array by given step sizes" do
+        a = Ammonite::Ndarray(Int32).arange(10)
+
+        a[{nil,1,nil}].to_a.should eq (0...10).to_a
+        a[{nil,2,nil}].to_a.should eq [0, 2, 4, 6, 8]
+        a[{nil,3,nil}].to_a.should eq [0, 3, 6, 9]
+        a[{nil,-1,nil}].to_a.should eq [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+        a[{nil,-2,nil}].to_a.should eq [9, 7, 5, 3, 1]
+        a[{nil,-3,nil}].to_a.should eq [9, 6, 3, 0]
+
+        expect_raises { a[{nil, 0, nil}] }
+      end
+    end
+
+    describe "{nil, step, end}" do
+      it "goes across whole array by given step sizes up to end" do
+        a = Ammonite::Ndarray(Int32).arange(10)
+
+        a[{nil,1,5}].to_a.should eq (0...5).to_a
+        a[{nil,1,-1}].to_a.should eq (0...9).to_a
+        a[{nil,1,-3}].to_a.should eq (0...7).to_a
+        a[{nil,3,-1}].to_a.should eq [0, 3, 6]
+        a[{nil,-1,0}].to_a.should eq [9, 8, 7, 6, 5, 4, 3, 2, 1]
+        a[{nil,-2,-5}].to_a.should eq [9, 7]
+      end
+    end
+
+    describe "{start, step, nil}" do
+      it "goes across whole array by given step sizes from start" do
+        a = Ammonite::Ndarray(Int32).arange(10)
+
+        a[{0,1,nil}].to_a.should eq (0...10).to_a
+        a[{2,2,nil}].to_a.should eq [2, 4, 6, 8]
+        a[{5,-1,nil}].to_a.should eq (0..5).to_a.reverse
+        a[{-1,-1,nil}].to_a.should eq (0...10).to_a.reverse
+        a[{-4,2,nil}].to_a.should eq [6, 8]
+        a[{-3,-3,nil}].to_a.should eq [7, 4, 1]
+      end
+    end
+
+    describe "{start, step, end}" do
+      it "goes across whole array by given step sizes from start" do
+        a = Ammonite::Ndarray(Int32).arange(10)
+
+        a[{0,1,0}].to_a.should eq [] of Int32
+        a[{0,1,-1}].to_a.should eq (0...9).to_a
+        a[{0,1,9}].to_a.should eq (0...9).to_a
+        a[{0,1,10}].to_a.should eq (0...10).to_a
+        a[{1,3,10}].to_a.should eq [1, 4, 7]
+        a[{2,3,9}].to_a.should eq [2, 5, 8]
+        a[{2,3,8}].to_a.should eq [2, 5]
+        a[{2,3,-2}].to_a.should eq [2, 5]
+        a[{-1,3,10}].to_a.should eq [9]
+        a[{-1,3,9}].to_a.should eq [] of Int32
+        a[{-1,3,-2}].to_a.should eq [] of Int32
+      end
+    end
   end
 end

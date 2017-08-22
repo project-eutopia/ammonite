@@ -157,7 +157,7 @@ module Ammonite
     end
 
     private def offset_from_multi_index(multi_index : MultiIndex)
-      offset = 0
+      offset = @offset
       strides.each_with_index do |stride, axis|
         offset += stride*multi_index.indexes[axis]
       end

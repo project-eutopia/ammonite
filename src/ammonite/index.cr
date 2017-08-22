@@ -20,6 +20,7 @@ module Ammonite
 
     def initialize(shape, @axis : Int32, index : IndexType)
       @step = index.is_a?(IndexStartStepEndSlice) ? index[1] : 1
+      raise "Step size cannot be zero" if @step == 0
 
       @front = case index
                when IndexPure
@@ -29,9 +30,9 @@ module Ammonite
                else
                  case j = index[0]
                  when Nil
-                   0
+                   @step > 0 ? 0 : shape[axis]-1
                  else
-                   j
+                   j >= 0 ? j : j + shape[axis]
                  end
                end
 
@@ -44,13 +45,20 @@ module Ammonite
                 j = index.is_a?(IndexStartEndSlice) ? index[1] : index[2]
                 case j
                 when Nil
-                  shape[axis]
+                  @step > 0 ? shape[axis] : -1
                 else
-                  j
+                  j >= 0 ? j : j + shape[axis]
                 end
               end
 
-      raise "Invalid #{self}" unless @step > 0 && @front <= @back && @front >= 0 && @back <= shape[axis]
+      # Set step to 0 if we slice over nothing (shape is 0 along this axis)
+      if @step > 0
+        @step = 0 if @front > @back
+        raise "Invalid index: #{index}" unless @front >= 0 && @back <= shape[axis]
+      elsif @step < 0
+        @step = 0 if @front < @back
+        raise "Invalid index: #{index}" unless @front < shape[axis] && @back >= -1
+      end
     end
 
     def base : Int32
@@ -62,10 +70,14 @@ module Ammonite
     end
 
     def axis_shape : (Nil | Int32)
+      # When set equal, we are a single index so axis collapsed
       if @front == @back
         nil
+      # step == 0 is special value for empty axis
+      elsif @step == 0
+        0
       else
-        (@back - @front + @step - 1) / @step
+        ((@back - @front).abs + @step.abs - 1) / @step.abs
       end
     end
   end
@@ -121,6 +133,11 @@ module Ammonite
 
     def each
       cur_multi_index = MultiIndex.new shape, shape.size.times.map {|_| 0}.to_a
+
+      # Skip if we have nothing to iterate over!
+      if cur_multi_index >= MultiIndex.new shape, shape
+        return
+      end
 
       loop do
         yield cur_multi_index
