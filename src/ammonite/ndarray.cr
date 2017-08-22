@@ -2,6 +2,17 @@ require "./index.cr"
 require "./buffer_view.cr"
 
 module Ammonite
+  def self.[](values)
+    # Dig down to get type
+    cur_values = values
+    while cur_values.responds_to?(:size)
+      cur_values = cur_values[0]
+    end
+
+    # Call default Ndarray constructor
+    Ndarray(typeof(cur_values)).new(values)
+  end
+
   # T is the type stored in the array
   class Ndarray(T)
     include Enumerable(T)
@@ -58,6 +69,62 @@ module Ammonite
       end
     end
 
+    def initialize(values)
+      @shape = [] of Int32
+      @ndim = 0
+
+      # Get shape and dimension
+      cur_dim = 0
+      cur_array = values
+      loop do
+        break if cur_array.is_a?(T)
+
+        @ndim += 1
+        @shape << cur_array.size
+
+        break if cur_array.size == 0
+        cur_array = cur_array[0]
+      end
+
+      @size = @shape.reduce(1) {|res,n| res*n}
+
+      @elem_size = sizeof(T)
+      @total_bytes = @elem_size * @size
+      @offset = 0
+      @strides = self.class.strides_from_shape(shape)
+
+      @buffer_view = BufferView(T).new(@size)
+
+      if values.is_a?(T)
+        @buffer_view[0] = values
+      else
+        fill_in_buffer([] of Int32, values)
+      end
+    end
+
+    private def fill_in_buffer(cur_indexes : Array(Int32), values)
+      # Here we are still going down the value array
+      if cur_indexes.size < ndim
+        raise "Invalid input data" if values.is_a?(T)
+        # Should have expected number of elements at this depth
+        raise "Incorrect shape" unless values.size == shape[cur_indexes.size]
+
+        shape[cur_indexes.size].times.each do |i|
+          cur_indexes << i
+          fill_in_buffer(cur_indexes, values[i])
+          cur_indexes.pop
+        end
+      else
+        case values
+        when T
+          offset = offset_from_multi_index(MultiIndex.new(shape, cur_indexes))
+          @buffer_view[offset] = values
+        else
+          raise "Bad value #{values}"
+        end
+      end
+    end
+
     def self.strides_from_shape(shape : Shape) : Strides
       ndim = shape.size
       shape.size.times.to_a.reverse.map {|i| shape[(ndim-i)...ndim].reduce(1) {|res,n| res*n}}
@@ -97,6 +164,11 @@ module Ammonite
       @total_bytes = @elem_size * @size
 
       @buffer_view = other.buffer_view
+    end
+
+    def []
+      raise "Invalid number of arguments" unless @ndim == 0
+      self.class.new(self, [] of Index)
     end
 
     def [](*args)

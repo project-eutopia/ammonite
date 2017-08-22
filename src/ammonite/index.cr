@@ -139,9 +139,7 @@ module Ammonite
       cur_multi_index = MultiIndex.new shape, shape.size.times.map {|_| 0}.to_a
 
       # Skip if we have nothing to iterate over!
-      if cur_multi_index >= MultiIndex.new shape, shape
-        return
-      end
+      return if cur_multi_index >= MultiIndex.new shape, shape
 
       loop do
         yield cur_multi_index

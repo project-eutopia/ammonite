@@ -2,6 +2,61 @@ require "../spec_helper"
 require "../../src/ammonite/ndarray.cr"
 
 describe Ammonite::Ndarray do
+  describe "#new(shape, value)" do
+    it "allocates array with given shape and fill value" do
+      a = Ammonite::Ndarray(Int32).new([2,3], 5)
+      a[0,0].value.should eq 5
+      a[0,1].value.should eq 5
+      a[1,1].value.should eq 5
+      a[1,2].value.should eq 5
+    end
+  end
+
+  describe "#new(array)" do
+    it "allocates array with given input" do
+      a = Ammonite[444]
+      a.ndim.should eq 0
+      a.shape.should eq [] of Int32
+      a.value.should eq 444
+      a[].value.should eq 444
+
+      aa = Ammonite[[[1,2,3,4], [9,8,7,6]]]
+      aa[0,0].value.should eq 1
+      aa[0,1].value.should eq 2
+      aa[0,2].value.should eq 3
+      aa[0,3].value.should eq 4
+      aa[1,0].value.should eq 9
+      aa[1,1].value.should eq 8
+      aa[1,2].value.should eq 7
+      aa[1,3].value.should eq 6
+
+      a0 = Ammonite::Ndarray(Int32).new([] of Int32)
+      a0.shape.should eq [0]
+      a0.ndim.should eq 1
+      a0.size.should eq 0
+
+      a1 = Ammonite::Ndarray(Int32).new([1, 3, 5, 7])
+      a1.shape.should eq [4]
+      a1.ndim.should eq 1
+      a1.size.should eq 4
+      a1[0].value.should eq 1
+      a1[2].value.should eq 5
+      a1[3].value.should eq 7
+
+      a2 = Ammonite::Ndarray(Int32).new([[2, 4, 6], [12, 14, 16]])
+      a2.shape.should eq [2,3]
+      a2.ndim.should eq 2
+      a2[0,0].value.should eq 2
+      a2[0,1].value.should eq 4
+      a2[0,2].value.should eq 6
+      a2[1,0].value.should eq 12
+      a2[1,1].value.should eq 14
+      a2[1,2].value.should eq 16
+
+      expect_raises { Ammonite::Ndarray(Int32).new([[1], [2,3]]) }
+    end
+  end
+
   describe "#empty" do
     it "allocates with correct attributes" do
       a = Ammonite::Ndarray(Int32).empty([4, 2])
