@@ -149,6 +149,34 @@ describe Ammonite::Ndarray do
     end
   end
 
+  describe "#t" do
+    it "transposes the array" do
+      a1 = Ammonite[[2, 3, 5, 7]]
+      a1.t.shape.should eq [4]
+      a1.t[0].value.should eq 2
+      a1.t[1].value.should eq 3
+      a1.t[2].value.should eq 5
+      a1.t[3].value.should eq 7
+
+      a2 = Ammonite[[[2,3,4], [7, 8, 9]]]
+      a2t = a2.t
+      a2t.shape.should eq [3,2]
+      a2t[0,0].value.should eq 2
+      a2t[0,1].value.should eq 7
+      a2t[1,0].value.should eq 3
+      a2t[1,1].value.should eq 8
+      a2t[2,0].value.should eq 4
+      a2t[2,1].value.should eq 9
+
+      a3 = Ammonite::Ndarray(Int32).arange(24).reshape([2,3,4])
+      a3.t.shape.should eq [4,3,2]
+      a3.t[0,0,0].value.should eq 0
+      a3.t[0,0,1].value.should eq 12
+      a3.t[0,1,0].value.should eq 4
+      a3.t[1,0,0].value.should eq 1
+    end
+  end
+
   describe "#[]" do
     it "returns a slice of the array" do
       sizes = (1..7).to_a

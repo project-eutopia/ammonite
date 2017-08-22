@@ -200,10 +200,10 @@ module Ammonite
 
       if strides == self.class.strides_from_shape(shape)
         # Here we have continguous memory, so just return a new view
-        Ndarray(T).new(self, offset, new_shape, self.class.strides_from_shape(new_shape))
+        self.class.new(self, offset, new_shape, self.class.strides_from_shape(new_shape))
       else
         # Here the data is not stored in a block, so we have to make a copy
-        Ndarray(T).empty(new_shape).tap do |array|
+        self.class.empty(new_shape).tap do |array|
           i = 0
           each do |value|
             array.buffer_view[i] = value
@@ -215,11 +215,15 @@ module Ammonite
 
     # Returns a copy of the array, flattened to a single dimension
     def flatten
-      array = Ndarray(T).empty([size])
+      array = self.class.empty([size])
       each_with_index do |value, index|
         array[index].set value
       end
       array
+    end
+
+    def t
+      self.class.new(self, @offset, @shape.reverse, @strides.reverse)
     end
 
     def value : T
