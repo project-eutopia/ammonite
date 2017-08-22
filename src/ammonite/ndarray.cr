@@ -1,26 +1,44 @@
+require "./index.cr"
 require "./buffer_view.cr"
 
 module Ammonite
   # T is the type stored in the array
   class Ndarray(T)
-    getter shape : Array(Int32)
+    include Enumerable(T)
+
+    alias Shape = Array(Int32)
+    alias Strides = Array(Int32)
+
+    getter shape : Shape
     getter ndim : Int32
     getter size : Int32
     getter elem_size : Int32
     getter total_bytes : Int32
     getter offset : Int32
-    getter strides : Array(Int32)
+    getter strides : Strides
     getter buffer_view : BufferView(T)
 
-    def self.empty(shape : Array(Int32))
+    def self.empty(shape : Shape)
       new(shape, nil)
     end
 
-    def self.zeros(shape : Array(Int32))
+    def self.zeros(shape : Shape)
       new(shape, T.new(0))
     end
 
-    def initialize(@shape : Array(Int32), value : (T | Nil))
+    def self.ones(shape : Shape)
+      new(shape, T.new(1))
+    end
+
+    def self.arange(n)
+      new([n], nil).tap do |array|
+        (0...n).each do |i|
+          array[i].set T.new(i)
+        end
+      end
+    end
+
+    def initialize(@shape : Shape, value : (T | Nil))
       # {{ raise unless T.is_a?(Number) }}
       raise "shape must be of non-negative integers" unless shape.all? {|i| i.is_a?(Int) && i >= 0}
       raise "shape must have at least one element" if shape.size == 0
@@ -31,7 +49,7 @@ module Ammonite
       @elem_size = sizeof(T)
       @total_bytes = @elem_size * @size
       @offset = 0
-      @strides = @shape.size.times.to_a.reverse.map {|i| @shape[(@ndim-i)...@ndim].reduce(1) {|res,n| res*n}}
+      @strides = self.class.strides_from_shape(shape)
 
       if value.nil?
         @buffer_view = BufferView(T).new(@size)
@@ -40,34 +58,77 @@ module Ammonite
       end
     end
 
-    protected def initialize(other : Ndarray, index : Int32)
-      @shape = [1]
-      @ndim = 1
-      @size = 1
+    def self.strides_from_shape(shape : Shape) : Strides
+      ndim = shape.size
+      shape.size.times.to_a.reverse.map {|i| shape[(ndim-i)...ndim].reduce(1) {|res,n| res*n}}
+    end
+
+    protected def initialize(other : Ndarray, indexes : Array(Index))
+      temp_shape = indexes.map {|index| index.axis_shape}
+      @ndim = indexes.select {|index| index.slice?}.size
+      @size = temp_shape.reduce(1) {|res, n| res * (n || 1)}
       @elem_size = sizeof(T)
       @total_bytes = @elem_size * @size
 
-      @offset = index
-      @strides = [1]
+      @offset = other.offset
+      other.strides.each_with_index do |stride, axis|
+        @offset += stride*indexes[axis].base
+      end
+
+      # TODO
+      temp_strides = indexes.map_with_index {|index, axis| other.strides[axis] * index.step}
+
+      @shape = [] of Int32
+      @strides = [] of Int32
+      temp_shape.each_with_index do |s, axis|
+        if !s.nil?
+          @shape << s
+          @strides << indexes[axis].step * other.strides[axis]
+        end
+      end
 
       @buffer_view = other.buffer_view
     end
 
     def [](*args)
-      index = 0
-      @strides.each_with_index do |stride, i|
-        index += stride*args[i]
+      raise "Invalid number of arguments" unless args.size == @ndim
+      indexes = args.map_with_index {|arg,i| Index.new(shape, i, arg)}
+      self.class.new(self, indexes)
+    end
+
+    def each
+      MultiIndexEnumerator.new(shape).each do |multi_index|
+        yield @buffer_view[offset_from_multi_index(multi_index)]
       end
-      self.class.new(self, index)
+    end
+
+    def each_with_multi_index
+      MultiIndexEnumerator.new(shape).each do |multi_index|
+        yield @buffer_view[offset_from_multi_index(multi_index)], multi_index
+      end
     end
 
     def set(other)
+      # TODO: handle sliced, validate compatible shapes
       @buffer_view[@offset] = T.new(other)
     end
 
+    # TODO
+    # def reshape(shape : Array(Int32))
+    # end
+
     def value : T
+      # @ndim = 0 for singular, @size = 1 for n-dim array with single element (e.g. shape [1,1,1])
       raise "Cannot call value on Ndarray with more than 1 element" unless @size == 1
       @buffer_view[@offset]
+    end
+
+    private def offset_from_multi_index(multi_index : MultiIndex)
+      offset = 0
+      strides.each_with_index do |stride, axis|
+        offset += stride*multi_index.indexes[axis]
+      end
+      offset
     end
   end
 end

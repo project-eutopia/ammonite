@@ -21,4 +21,30 @@ describe Ammonite::Ndarray do
       b.strides.should eq [3*4, 4, 1]
     end
   end
+
+  describe "#zeros" do
+    it "is initialized to all zeros" do
+      a = Ammonite::Ndarray(Int32).zeros([3,2,4])
+      a.shape.should eq [3,2,4]
+      a.all? {|i| i == 0}.should eq true
+    end
+  end
+
+  describe "#ones" do
+    it "is initialized to all ones" do
+      a = Ammonite::Ndarray(UInt16).ones([10,2,1])
+      a.shape.should eq [10,2,1]
+      a.all? {|i| i == 1}.should eq true
+    end
+  end
+
+  describe "#arange" do
+    it "is initialized to numbers between 0 and N" do
+      a = Ammonite::Ndarray(UInt16).arange(15)
+      a.shape.should eq [15]
+      a.each_with_index do |v, i|
+        v.should eq i
+      end
+    end
+  end
 end
