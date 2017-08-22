@@ -189,6 +189,15 @@ describe Ammonite::Ndarray do
       end
     end
 
+    describe "multiple calls" do
+      it "can be chained" do
+        a = Ammonite::Ndarray(Int32).arange(100)
+        b = a[{2,2,98}][{2,3,9}]
+        b.shape.should eq [3]
+        b.to_a.should eq [6, 12, 18]
+      end
+    end
+
     describe "{nil, step, nil}" do
       it "goes across whole array by given step sizes" do
         a = Ammonite::Ndarray(Int32).arange(10)
