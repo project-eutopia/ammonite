@@ -178,13 +178,13 @@ module Ammonite
     end
 
     def each
-      MultiIndexEnumerator.new(shape).each do |multi_index|
+      MulitIndexIterator.new(shape).each do |multi_index|
         yield @buffer_view[offset_from_multi_index(multi_index)]
       end
     end
 
     def each_with_multi_index
-      MultiIndexEnumerator.new(shape).each do |multi_index|
+      MulitIndexIterator.new(shape).each do |multi_index|
         yield @buffer_view[offset_from_multi_index(multi_index)], multi_index
       end
     end

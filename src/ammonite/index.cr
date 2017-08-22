@@ -112,7 +112,7 @@ module Ammonite
     end
 
     # Returns true if overflow
-    def increment : Bool
+    def increment
       increment(shape.size - 1)
     end
 
@@ -120,31 +120,47 @@ module Ammonite
       return true if axis < 0
 
       if indexes[axis] == shape[axis]-1
-        indexes[axis] = 0
-        return increment(axis-1)
+        if axis > 0
+          indexes[axis] = 0
+          increment(axis-1)
+        else
+          indexes[axis] += 1
+        end
       else
         indexes[axis] += 1
-        false
       end
     end
   end
 
-  private struct MultiIndexEnumerator
-    getter shape : Array(Int32)
+  private struct MulitIndexIterator
+    include Iterator(MultiIndex)
+
+    @shape : Array(Int32)
+    @n : Int32
+    @multi_index : MultiIndex
+    @end_index : MultiIndex
 
     def initialize(@shape)
+      @n = 0
+      @multi_index = initial_multi_index
+      @end_index = MultiIndex.new(@shape, @shape.map {|i| i-1})
     end
 
-    def each
-      cur_multi_index = MultiIndex.new shape, shape.size.times.map {|_| 0}.to_a
+    def next
+      @multi_index.increment if @n > 0
+      return stop if @multi_index > @end_index
+      @n += 1
+      @multi_index
+    end
 
-      # Skip if we have nothing to iterate over!
-      return if cur_multi_index >= MultiIndex.new shape, shape
+    def rewind
+      @n = 0
+      @multi_index = initial_multi_index
+      self
+    end
 
-      loop do
-        yield cur_multi_index
-        break if cur_multi_index.increment
-      end
+    private def initial_multi_index
+      MultiIndex.new @shape, @shape.size.times.map {|_| 0}.to_a
     end
   end
 end
