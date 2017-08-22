@@ -18,46 +18,54 @@ module Ammonite
     getter back : Int32
     getter step : Int32
 
+    # True if we are collapsing axis by picking a single value out
+    getter collapsed : Bool
+
     def initialize(shape, @axis : Int32, index : IndexType)
-      @step = index.is_a?(IndexStartStepEndSlice) ? index[1] : 1
-      raise "Step size cannot be zero" if @step == 0
+      if index.is_a?(IndexPure)
+        @collapsed = true
+        @front = index
+        @back = index
+        @step = 0
+      else
+        @collapsed = false
 
-      @front = case index
-               when IndexPure
-                 index
-               when IndexFullSlice
-                 0
-               else
-                 case j = index[0]
-                 when Nil
-                   @step > 0 ? 0 : shape[axis]-1
+        @step = index.is_a?(IndexStartStepEndSlice) ? index[1] : 1
+        raise "Step size cannot be zero" if @step == 0
+
+        @front = case index
+                 when IndexFullSlice
+                   0
                  else
-                   j >= 0 ? j : j + shape[axis]
+                   case j = index[0]
+                   when Nil
+                     @step > 0 ? 0 : shape[axis]-1
+                   else
+                     j >= 0 ? j : j + shape[axis]
+                   end
                  end
-               end
 
-      @back = case index
-              when IndexPure
-                index
-              when IndexFullSlice
-                shape[axis]
-              else
-                j = index.is_a?(IndexStartEndSlice) ? index[1] : index[2]
-                case j
-                when Nil
-                  @step > 0 ? shape[axis] : -1
+        @back = case index
+                when IndexFullSlice
+                  shape[axis]
                 else
-                  j >= 0 ? j : j + shape[axis]
+                  j = index.is_a?(IndexStartEndSlice) ? index[1] : index[2]
+                  case j
+                  when Nil
+                    @step > 0 ? shape[axis] : -1
+                  else
+                    j >= 0 ? j : j + shape[axis]
+                  end
                 end
-              end
 
-      # Set step to 0 if we slice over nothing (shape is 0 along this axis)
-      if @step > 0
-        @step = 0 if @front > @back
-        raise "Invalid index: #{index}" unless @front >= 0 && @back <= shape[axis]
-      elsif @step < 0
-        @step = 0 if @front < @back
-        raise "Invalid index: #{index}" unless @front < shape[axis] && @back >= -1
+        # Set step to 0 if we slice over nothing (shape is 0 along this axis)
+        if @step > 0
+          @step = 0 if @front > @back
+          raise "Invalid index: #{index}" unless @front >= 0 && @back <= shape[axis]
+        elsif @step < 0
+          @step = 0 if @front < @back
+          raise "Invalid index: #{index}" unless @front < shape[axis] && @back >= -1
+        end
       end
     end
 
@@ -65,13 +73,9 @@ module Ammonite
       @front
     end
 
-    def slice?
-      @front < @back
-    end
-
     def axis_shape : (Nil | Int32)
       # When set equal, we are a single index so axis collapsed
-      if @front == @back
+      if @collapsed
         nil
       # step == 0 is special value for empty axis
       elsif @step == 0

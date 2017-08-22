@@ -162,6 +162,16 @@ describe Ammonite::Ndarray do
         a[{-1,3,10}].to_a.should eq [9]
         a[{-1,3,9}].to_a.should eq [] of Int32
         a[{-1,3,-2}].to_a.should eq [] of Int32
+
+        b = a[{5,-1,0}]
+        b.ndim.should eq 1
+        b.shape.should eq [5]
+        b.to_a.should eq [5, 4, 3, 2, 1]
+
+        c = a[{0,1,0}]
+        c.ndim.should eq 1
+        c.shape.should eq [0]
+        c.to_a.should eq [] of Int32
       end
     end
   end

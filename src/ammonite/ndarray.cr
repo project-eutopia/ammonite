@@ -65,7 +65,7 @@ module Ammonite
 
     protected def initialize(other : Ndarray, indexes : Array(Index))
       temp_shape = indexes.map {|index| index.axis_shape}
-      @ndim = indexes.select {|index| index.slice?}.size
+      @ndim = indexes.select {|index| !index.collapsed}.size
       @size = temp_shape.reduce(1) {|res, n| res * (n || 1)}
       @elem_size = sizeof(T)
       @total_bytes = @elem_size * @size
