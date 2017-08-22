@@ -90,12 +90,11 @@ module Ammonite
       @buffer_view = other.buffer_view
     end
 
-    protected def initialize(other : Ndarray, @offset, @shape)
+    protected def initialize(other : Ndarray, @offset, @shape, @strides)
       @ndim = @shape.size
       @size = shape.reduce(1) {|res,n| res*n}
       @elem_size = sizeof(T)
       @total_bytes = @elem_size * @size
-      @strides = self.class.strides_from_shape(shape)
 
       @buffer_view = other.buffer_view
     end
@@ -129,7 +128,7 @@ module Ammonite
 
       # TODO: Here we have continguous memory, so just return a new view
       if strides == self.class.strides_from_shape(shape)
-        Ndarray(T).new(self, offset, new_shape)
+        Ndarray(T).new(self, offset, new_shape, self.class.strides_from_shape(new_shape))
       else
         Ndarray(T).empty(new_shape).tap do |array|
           i = 0

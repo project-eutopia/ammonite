@@ -65,7 +65,7 @@ module Ammonite
       if @front == @back
         nil
       else
-        (@back - @front) / @step
+        (@back - @front + @step - 1) / @step
       end
     end
   end

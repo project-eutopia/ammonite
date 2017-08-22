@@ -88,9 +88,22 @@ describe Ammonite::Ndarray do
 
   describe "#flatten" do
     it "returns a copy of the data reduced to a single dimension" do
-      a = Ammonite::Ndarray(UInt16).arange(10)
-      b = a[{nil, 2, nil}].flatten
-      b.to_a.should eq [0,2,4,6,8]
+      a = Ammonite::Ndarray(UInt16).arange(20).reshape([2,10])
+      b = a[nil, {nil, 4, nil}].flatten
+      b.to_a.should eq [0,4,8,10,14,18]
+    end
+  end
+
+  describe "#[]" do
+    it "returns a slice of the array" do
+      sizes = (1..7).to_a
+      sliced_sizes = [1, 1, 1, 2, 2, 2, 3]
+
+      sizes.each_with_index do |size, i|
+        Ammonite::Ndarray(Int32).arange(size).tap do |array|
+          array[{nil,3,nil}].shape.should eq [sliced_sizes[i]]
+        end
+      end
     end
   end
 end
