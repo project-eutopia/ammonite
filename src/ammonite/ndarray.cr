@@ -90,6 +90,16 @@ module Ammonite
       @buffer_view = other.buffer_view
     end
 
+    protected def initialize(other : Ndarray, @offset, @shape)
+      @ndim = @shape.size
+      @size = shape.reduce(1) {|res,n| res*n}
+      @elem_size = sizeof(T)
+      @total_bytes = @elem_size * @size
+      @strides = self.class.strides_from_shape(shape)
+
+      @buffer_view = other.buffer_view
+    end
+
     def [](*args)
       raise "Invalid number of arguments" unless args.size == @ndim
       indexes = args.map_with_index {|arg,i| Index.new(shape, i, arg)}
@@ -113,9 +123,32 @@ module Ammonite
       @buffer_view[@offset] = T.new(other)
     end
 
-    # TODO
-    # def reshape(shape : Array(Int32))
-    # end
+    # Returns a copy of the data with the new shape
+    def reshape(new_shape : Array(Int32))
+      raise "Incompatible shape #{new_shape} with Ndarray of shape #{shape}" unless new_shape.reduce(1) {|res,n| res*n} == size
+
+      # TODO: Here we have continguous memory, so just return a new view
+      if strides == self.class.strides_from_shape(shape)
+        Ndarray(T).new(self, offset, new_shape)
+      else
+        Ndarray(T).empty(new_shape).tap do |array|
+          i = 0
+          each do |value|
+            array.buffer_view[i] = value
+            i += 1
+          end
+        end
+      end
+    end
+
+    # Returns a copy of the array, flattened to a single dimension
+    def flatten
+      array = Ndarray(T).empty([size])
+      each_with_index do |value, index|
+        array[index].set value
+      end
+      array
+    end
 
     def value : T
       # @ndim = 0 for singular, @size = 1 for n-dim array with single element (e.g. shape [1,1,1])
