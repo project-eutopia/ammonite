@@ -1,6 +1,6 @@
 # ammonite
 
-TODO: Write a description here
+A multi-dimensional numerical array library in the spirit of [numpy](http://www.numpy.org/).
 
 ## Installation
 
@@ -9,7 +9,7 @@ Add this to your application's `shard.yml`:
 ```yaml
 dependencies:
   ammonite:
-    github: [your-github-name]/ammonite
+    github: project-eutopia/ammonite
 ```
 
 ## Usage
@@ -22,11 +22,11 @@ TODO: Write usage instructions here
 
 ## Development
 
-TODO: Write development instructions here
+Specs are ran using the command `crystal spec`
 
 ## Contributing
 
-1. Fork it ( https://github.com/[your-github-name]/ammonite/fork )
+1. Fork it ( https://github.com/project-eutopia/ammonite/fork )
 2. Create your feature branch (git checkout -b my-new-feature)
 3. Commit your changes (git commit -am 'Add some feature')
 4. Push to the branch (git push origin my-new-feature)
@@ -34,4 +34,4 @@ TODO: Write development instructions here
 
 ## Contributors
 
-- [[your-github-name]](https://github.com/[your-github-name]) Christopher Locke - creator, maintainer
+- [project-eutopia](https://github.com/project-eutopia) Christopher Locke - creator, maintainer
