@@ -45,10 +45,12 @@ module Ammonite
       new(shape, T.new(1))
     end
 
-    def self.arange(n)
+    def self.arange(n : Int)
+      raise "Invalid n for arange" unless n >= 0
+
       new([n], nil).tap do |array|
         (0...n).each do |i|
-          array[i].set T.new(i)
+          array[i].set i
         end
       end
     end

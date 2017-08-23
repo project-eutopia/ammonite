@@ -101,6 +101,12 @@ describe Ammonite::Ndarray do
         v.should eq i
       end
     end
+
+    it "raises error for negative numbers" do
+      expect_raises do
+        Ammonite::Ndarray(Int8).arange(-1)
+      end
+    end
   end
 
   describe "#reshape" do
