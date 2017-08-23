@@ -55,11 +55,11 @@ module Ammonite
       it "handles long shapes and shapes with collapsed indexes" do
         b = Broadcaster.new([3, 1, 4, 1, 1, 9], [4, 1, 5, 1])
 
-        b.indexes1_from_broadcasting_indexes([0, 0, 0, 0, 0, 0]).should eq [0, 0, 0, 0, 0, 0]
-        b.indexes2_from_broadcasting_indexes([0, 0, 0, 0, 0, 0]).should eq [0, 0, 0, 0]
+        b.indexes1_from_broadcasting_indexes(MultiIndex.new b.shape1, [0, 0, 0, 0, 0, 0]).indexes.should eq [0, 0, 0, 0, 0, 0]
+        b.indexes2_from_broadcasting_indexes(MultiIndex.new b.shape2, [0, 0, 0, 0, 0, 0]).indexes.should eq [0, 0, 0, 0]
 
-        b.indexes1_from_broadcasting_indexes([2, 0, 3, 0, 4, 8]).should eq [2, 0, 3, 0, 0, 8]
-        b.indexes2_from_broadcasting_indexes([2, 0, 3, 0, 4, 8]).should eq [3, 0, 4, 0]
+        b.indexes1_from_broadcasting_indexes(MultiIndex.new b.shape1, [2, 0, 3, 0, 4, 8]).indexes.should eq [2, 0, 3, 0, 0, 8]
+        b.indexes2_from_broadcasting_indexes(MultiIndex.new b.shape2, [2, 0, 3, 0, 4, 8]).indexes.should eq [3, 0, 4, 0]
       end
     end
   end

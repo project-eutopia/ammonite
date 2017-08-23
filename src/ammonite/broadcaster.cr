@@ -5,11 +5,12 @@ module Ammonite
     class BroadcasterIterator
       include Iterator(Tuple(MultiIndex, MultiIndex, MultiIndex))
 
-      @broadcast_shape : MultiIndex
+      @broadcaster : Broadcaster
+      @broadcast_shape : Array(Int32)
       @multi_index_iterator : MultiIndexIterator
 
-      def initialize(broadcaster : Broadcaster)
-        @broadcast_shape = broadcast_shape.broadcast_shape
+      def initialize(@broadcaster : Broadcaster)
+        @broadcast_shape = @broadcaster.broadcast_shape
         @multi_index_iterator = MultiIndexIterator.new @broadcast_shape
       end
 
@@ -17,15 +18,21 @@ module Ammonite
       # TODO: handle case with blank arrays (setting individual values)
       def next
         next_multi_index = @multi_index_iterator.next
-        return stop if next_multi_index == Iterator::Stop::INSTANCE
 
-        # FIXME
-        # stop
+        if next_multi_index.is_a? Iterator::Stop
+          return stop
+        else
+          {
+            @broadcaster.indexes1_from_broadcasting_indexes(next_multi_index),
+            @broadcaster.indexes2_from_broadcasting_indexes(next_multi_index),
+            next_multi_index
+          }
+        end
       end
     end
 
-    @shape1 : Array(Int32)
-    @shape2 : Array(Int32)
+    getter shape1 : Array(Int32)
+    getter shape2 : Array(Int32)
     getter broadcast_shape : Array(Int32)
 
     def initialize(@shape1, @shape2)
@@ -57,11 +64,19 @@ module Ammonite
       @broadcast_shape = @broadcast_shape.reverse
     end
 
-    def indexes1_from_broadcasting_indexes(indexes : Array(Int32))
+    def shape1_contains_shape2
+      shape_contains_shape(@shape1, @shape2)
+    end
+
+    def shape2_contains_shape1
+      shape_contains_shape(@shape2, @shape1)
+    end
+
+    def indexes1_from_broadcasting_indexes(indexes : MultiIndex)
       indexes_from_broadcasting_shape(indexes, @shape1)
     end
 
-    def indexes2_from_broadcasting_indexes(indexes : Array(Int32))
+    def indexes2_from_broadcasting_indexes(indexes : MultiIndex)
       indexes_from_broadcasting_shape(indexes, @shape2)
     end
 
@@ -69,9 +84,9 @@ module Ammonite
       BroadcasterIterator.new(self)
     end
 
-    private def indexes_from_broadcasting_shape(broadcasting_indexes : Array(Int32), shape : Array(Int32))
+    private def indexes_from_broadcasting_shape(broadcasting_multi_index : MultiIndex, shape : Array(Int32))
       # Cut off last part of array
-      indexes = broadcasting_indexes[(broadcasting_indexes.size - shape.size)..-1]
+      indexes = broadcasting_multi_index.indexes[(broadcasting_multi_index.indexes.size - shape.size)..-1]
 
       # Fix indexes corresponding to collapsed axes
       offset = shape.size-1
@@ -81,7 +96,19 @@ module Ammonite
         end
       end
 
-      indexes
+      MultiIndex.new shape, indexes
+    end
+
+    # Checks if right is contained within left (left >= right)
+    private def shape_contains_shape(left : Array(Int32), right : Array(Int32))
+      return false if left.size < right.size
+      # Focus on part that overlaps
+      left = left[(left.size-right.size)..-1]
+
+      left.each_with_index.all? do |v1, i|
+        v2 = right[i]
+        v1 >= v2
+      end
     end
   end
 end
