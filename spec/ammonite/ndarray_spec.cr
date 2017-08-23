@@ -195,6 +195,13 @@ describe Ammonite::Ndarray do
       end
     end
 
+    describe "iterating over completely collapsed array" do
+      it "gives just the single element" do
+        a = Ammonite::Ndarray(Int32).arange(10)
+        a[3].map {|i| i}.should eq [3]
+      end
+    end
+
     describe "collapsing just first axis" do
       it "returns the reduced array" do
         a = Ammonite::Ndarray(Int32).arange(24).reshape([4,3,2])

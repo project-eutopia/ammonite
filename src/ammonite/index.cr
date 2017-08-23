@@ -147,10 +147,15 @@ module Ammonite
     end
 
     def next
-      @multi_index.increment if @n > 0
-      return stop if @multi_index > @end_index
-      @n += 1
-      @multi_index
+      if @shape.size > 0
+        @multi_index.increment if @n > 0
+        return stop if @multi_index > @end_index
+        @n += 1
+        @multi_index
+      else
+        @n += 1
+        @n == 1 ? @multi_index : stop
+      end
     end
 
     def rewind
