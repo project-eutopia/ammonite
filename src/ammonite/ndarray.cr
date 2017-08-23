@@ -197,21 +197,20 @@ module Ammonite
       end
     end
 
-    # TODO: upcast types
-    def set(other)
-      if other.is_a?(Ndarray)
-        broadcaster = Broadcaster.new(shape, other.shape)
-        raise "Invalid rhs to set -- shape #{other.shape} is too large to broadcast into #{shape}" unless broadcaster.shape1_contains_shape2
+    def set(other : Ndarray)
+      broadcaster = Broadcaster.new(shape, other.shape)
+      raise "Invalid rhs to set -- shape #{other.shape} is too large to broadcast into #{shape}" unless broadcaster.shape1_contains_shape2
 
-        broadcaster.iterator.each do |multi_indexes1, multi_indexes2, _|
-          offset1 = offset_from_multi_index(multi_indexes1)
-          offset2 = other.offset_from_multi_index(multi_indexes2)
+      broadcaster.iterator.each do |multi_indexes1, multi_indexes2, _|
+        offset1 = offset_from_multi_index(multi_indexes1)
+        offset2 = other.offset_from_multi_index(multi_indexes2)
 
-          @buffer_view[offset1] = other.buffer_view[offset2]
-        end
-      else
-        @buffer_view[@offset] = T.new(other)
+        @buffer_view[offset1] = other.buffer_view[offset2]
       end
+    end
+
+    def set(other)
+      @buffer_view[@offset] = other
     end
 
     {% for name in [:+, :-, :*, :/, :**] %}

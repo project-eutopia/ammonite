@@ -27,12 +27,12 @@ module Ammonite
       @slice = get_slice
     end
 
-    def [](index : Int32)
+    def [](index : Int32) : T
       @slice[index]
     end
 
-    def []=(index : Int32, value : T)
-      @slice[index] = value
+    def []=(index : Int32, value) : T
+      @slice[index] = T.new(value)
     end
 
     private def get_slice
