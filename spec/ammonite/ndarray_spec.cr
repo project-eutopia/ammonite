@@ -267,4 +267,49 @@ describe Ammonite::Ndarray do
       end
     end
   end
+
+  describe "#set" do
+    context "when simple value" do
+    end
+
+    context "when ndarray" do
+      it "broadcasts along collapsed axes" do
+        a = Ammonite::Ndarray(Int32).zeros([3, 3])
+
+        b1 = Ammonite::Ndarray(Int32).arange(3)
+        a.set b1
+
+        a[0,0].value.should eq 0
+        a[0,1].value.should eq 1
+        a[0,2].value.should eq 2
+        a[1,0].value.should eq 0
+        a[1,1].value.should eq 1
+        a[1,2].value.should eq 2
+        a[2,0].value.should eq 0
+        a[2,1].value.should eq 1
+        a[2,2].value.should eq 2
+
+        b2 = Ammonite::Ndarray(Int32).arange(3).reshape([3,1])
+        a.set b2
+
+        a[0,0].value.should eq 0
+        a[0,1].value.should eq 0
+        a[0,2].value.should eq 0
+        a[1,0].value.should eq 1
+        a[1,1].value.should eq 1
+        a[1,2].value.should eq 1
+        a[2,0].value.should eq 2
+        a[2,1].value.should eq 2
+        a[2,2].value.should eq 2
+      end
+
+      it "raises error when shape of rhs is incompatible (too large)" do
+        expect_raises do
+          a = Ammonite::Ndarray(Int32).zeros([3, 1])
+          b = Ammonite::Ndarray(Int32).zeros([3, 3])
+          a.set b
+        end
+      end
+    end
+  end
 end

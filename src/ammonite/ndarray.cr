@@ -1,5 +1,6 @@
 require "./index.cr"
 require "./buffer_view.cr"
+require "./broadcaster.cr"
 
 module Ammonite
   def self.[](values)
@@ -190,8 +191,20 @@ module Ammonite
     end
 
     def set(other)
-      # TODO: handle sliced, validate compatible shapes
-      @buffer_view[@offset] = T.new(other)
+      if other.is_a?(Ndarray)
+        # TODO: handle sliced, validate compatible shapes
+        broadcaster = Broadcaster.new(shape, other.shape)
+        raise "Invalid rhs to set -- shape #{other.shape} is too large to broadcast into #{shape}" unless broadcaster.shape1_contains_shape2
+
+        broadcaster.iterator.each do |multi_indexes1, multi_indexes2, _|
+          offset1 = offset_from_multi_index(multi_indexes1)
+          offset2 = other.offset_from_multi_index(multi_indexes2)
+
+          @buffer_view[offset1] = other.buffer_view[offset2]
+        end
+      else
+        @buffer_view[@offset] = T.new(other)
+      end
     end
 
     # Returns a copy of the data with the new shape
@@ -232,7 +245,7 @@ module Ammonite
       @buffer_view[@offset]
     end
 
-    private def offset_from_multi_index(multi_index : MultiIndex)
+    protected def offset_from_multi_index(multi_index : MultiIndex)
       offset = @offset
       strides.each_with_index do |stride, axis|
         offset += stride*multi_index.indexes[axis]
