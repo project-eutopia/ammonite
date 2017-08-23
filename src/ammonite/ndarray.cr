@@ -190,9 +190,9 @@ module Ammonite
       end
     end
 
+    # TODO: upcast types
     def set(other)
       if other.is_a?(Ndarray)
-        # TODO: handle sliced, validate compatible shapes
         broadcaster = Broadcaster.new(shape, other.shape)
         raise "Invalid rhs to set -- shape #{other.shape} is too large to broadcast into #{shape}" unless broadcaster.shape1_contains_shape2
 
@@ -206,6 +206,26 @@ module Ammonite
         @buffer_view[@offset] = T.new(other)
       end
     end
+
+    {% for name in [:+, :-, :*, :/, :**] %}
+      # TODO: upcast types
+      def {{name.id}}(other)
+        other = Ndarray(typeof(other)).new(other) unless other.is_a?(Ndarray)
+        broadcaster = Broadcaster.new(shape, other.shape)
+
+        res = Ndarray(T).empty(broadcaster.broadcast_shape)
+
+        broadcaster.iterator.each do |multi_index1, multi_index2, multi_index|
+          offset1 = offset_from_multi_index(multi_index1)
+          offset2 = other.offset_from_multi_index(multi_index2)
+          offset  = res.offset_from_multi_index(multi_index)
+
+          res.buffer_view[offset] = self.buffer_view[offset1].{{name.id}}(other.buffer_view[offset2])
+        end
+
+        res
+      end
+    {% end %}
 
     # Returns a copy of the data with the new shape
     def reshape(new_shape : Array(Int32))
