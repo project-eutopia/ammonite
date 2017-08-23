@@ -276,6 +276,11 @@ describe Ammonite::Ndarray do
 
   describe "#set" do
     context "when simple value" do
+      it "fills the full array" do
+        a = Ammonite::Ndarray(Int32).zeros([3, 2])
+        a.set 5
+        a.all? {|v| v == 5}.should be_true
+      end
     end
 
     context "when ndarray" do

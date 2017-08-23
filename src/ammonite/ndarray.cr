@@ -85,7 +85,7 @@ module Ammonite
       cur_dim = 0
       cur_array = values
       loop do
-        break if cur_array.is_a?(T)
+        break unless cur_array.is_a?(Array)
 
         @ndim += 1
         @shape << cur_array.size
@@ -103,10 +103,10 @@ module Ammonite
 
       @buffer_view = BufferView(T).new(@size)
 
-      if values.is_a?(T)
-        @buffer_view[0] = values
-      else
+      if values.is_a?(Array)
         fill_in_buffer([] of Int32, values)
+      else
+        @buffer_view[0] = values
       end
     end
 
@@ -181,10 +181,13 @@ module Ammonite
       self.class.new(self, [] of Index)
     end
 
-    def [](*args)
-      raise "Invalid number of arguments" unless args.size == @ndim
-      indexes = args.map_with_index {|arg,i| Index.new(shape, i, arg)}
-      self.class.new(self, indexes)
+    def [](*args) : Ndarray
+      if args.size == @ndim
+        indexes = args.map_with_index {|arg,i| Index.new(shape, i, arg)}
+        self.class.new(self, indexes)
+      else
+        raise "Invalid number of arguments"
+      end
     end
 
     def each
@@ -212,7 +215,14 @@ module Ammonite
     end
 
     def set(other)
-      @buffer_view[@offset] = other
+      if @ndim == 0
+        @buffer_view[@offset] = other
+      else
+        MultiIndexIterator.new(shape).each do |multi_index|
+          offset = offset_from_multi_index(multi_index)
+          @buffer_view[offset] = other
+        end
+      end
     end
 
     {% for name in [:+, :-, :*, :/, :**] %}
