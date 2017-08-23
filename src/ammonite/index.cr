@@ -132,7 +132,7 @@ module Ammonite
     end
   end
 
-  private struct MulitIndexIterator
+  private struct MultiIndexIterator
     include Iterator(MultiIndex)
 
     @shape : Array(Int32)
