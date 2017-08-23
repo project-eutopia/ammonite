@@ -195,6 +195,18 @@ describe Ammonite::Ndarray do
       end
     end
 
+    describe "collapsing just first axis" do
+      it "returns the reduced array" do
+        a = Ammonite::Ndarray(Int32).arange(24).reshape([4,3,2])
+        a[1].shape.should eq [3,2]
+        a[1][1][1].value.should eq 1 + 2*1 + 2*3*1
+
+        b = a[{nil,2,nil}]
+        b.shape.should eq [2,3,2]
+        b[1][1][1].value.should eq 1 + 2*1 + 2*3*2
+      end
+    end
+
     describe "multiple calls" do
       it "can be chained" do
         a = Ammonite::Ndarray(Int32).arange(100)

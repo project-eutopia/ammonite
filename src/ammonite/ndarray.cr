@@ -183,11 +183,20 @@ module Ammonite
 
     def [](*args) : Ndarray
       if args.size == @ndim
+        # Here we have an index for each axis
         indexes = args.map_with_index {|arg,i| Index.new(shape, i, arg)}
-        self.class.new(self, indexes)
+
+      elsif args.size == 1
+        # Here we only act on the first axis, and leave the rest alone
+        indexes = [Index.new(shape, 0, args[0])]
+        (1...@ndim).each do |i|
+          indexes << Index.new(shape, i, nil)
+        end
       else
         raise "Invalid number of arguments"
       end
+
+      self.class.new(self, indexes)
     end
 
     def each
