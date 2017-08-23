@@ -21,6 +21,9 @@ module Ammonite
     alias Shape = Array(Int32)
     alias Strides = Array(Int32)
 
+    # Single uninitialized variable used for type checking
+    protected getter type : T
+
     getter shape : Shape
     getter ndim : Int32
     getter size : Int32
@@ -51,6 +54,7 @@ module Ammonite
     end
 
     def initialize(@shape : Shape, value : (T | Nil))
+      @type = uninitialized T
       # {{ raise unless T.is_a?(Number) }}
       raise "shape must be of non-negative integers" unless shape.all? {|i| i.is_a?(Int) && i >= 0}
       raise "shape must have at least one element" if shape.size == 0
@@ -71,6 +75,7 @@ module Ammonite
     end
 
     def initialize(values)
+      @type = uninitialized T
       @shape = [] of Int32
       @ndim = 0
 
@@ -132,6 +137,7 @@ module Ammonite
     end
 
     protected def initialize(other : Ndarray, indexes : Array(Index))
+      @type = uninitialized T
       temp_shape = indexes.map {|index| index.axis_shape}
       @ndim = indexes.select {|index| !index.collapsed}.size
       @size = temp_shape.reduce(1) {|res, n| res * (n || 1)}
@@ -159,6 +165,7 @@ module Ammonite
     end
 
     protected def initialize(other : Ndarray, @offset, @shape, @strides)
+      @type = uninitialized T
       @ndim = @shape.size
       @size = shape.reduce(1) {|res,n| res*n}
       @elem_size = sizeof(T)
@@ -208,12 +215,12 @@ module Ammonite
     end
 
     {% for name in [:+, :-, :*, :/, :**] %}
-      # TODO: upcast types
       def {{name.id}}(other)
         other = Ndarray(typeof(other)).new(other) unless other.is_a?(Ndarray)
         broadcaster = Broadcaster.new(shape, other.shape)
 
-        res = Ndarray(T).empty(broadcaster.broadcast_shape)
+        # Upcast based on return of operation
+        res = Ndarray(typeof(self.type.{{name.id}}(other.type))).empty(broadcaster.broadcast_shape)
 
         broadcaster.iterator.each do |multi_index1, multi_index2, multi_index|
           offset1 = offset_from_multi_index(multi_index1)
